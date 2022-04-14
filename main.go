@@ -3,10 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 	"os"
 	"strings"
+
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 )
 
 type Entity struct {
@@ -69,15 +70,44 @@ func main() {
 
 	for scanner.Scan() {
 		input := scanner.Text()
+		cmd, err := Parse(input)
+
+		if err != nil {
+			fmt.Println(err)
+			fmt.Print("> ")
+			continue
+		}
 
 		currentRoom := entities[player.location]
 
-		switch input {
+		switch cmd.Action {
 		case "look":
 			fmt.Println(currentRoom.description)
 		case "quit":
 			fmt.Println("Thanks for playing!")
 			os.Exit(0)
+		case "inventory":
+			var things []string
+
+			for _, thingId := range player.contents {
+				things = append(things, entities[thingId].name)
+			}
+
+			fmt.Printf("You are carrying %s\n", FormatItems(things))
+		case "take":
+			for index, thingId := range currentRoom.contents {
+				if entities[thingId].name == cmd.Noun {
+					thing := entities[thingId]
+
+					player.contents = append(player.contents, thingId)
+					currentRoom.contents = slices.Delete(currentRoom.contents, index, index+1)
+
+					thing.location = player.id
+
+					fmt.Printf("You take the %s.\n", cmd.Noun)
+					break
+				}
+			}
 		default:
 			newRoom, ok := currentRoom.exits[input]
 			if !ok {
@@ -93,6 +123,10 @@ func main() {
 
 		fmt.Print("> ")
 	}
+}
+
+func FormatItems(input []string) string {
+	return ""
 }
 
 func ListExits(room *Entity) string {
