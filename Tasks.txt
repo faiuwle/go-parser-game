@@ -1,4 +1,4 @@
 - Ability to interact with objects
-- Ability to list objects
+X Ability to list objects
 - Abbreviate direction commands
 - Ability to link an exit with an object
