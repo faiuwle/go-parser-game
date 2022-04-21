@@ -1,23 +1,28 @@
-package main
+package rage_test
 
-import "testing"
+import (
+	"github.com/faiuwle/go-parser-game/rage"
+	"testing"
+)
 
+/*
 func TestUnknownCommandFails(t *testing.T) {
 	command := "notfound"
 
-	_, err := Parse(command)
+	_, err := rage.Parse(command)
 
-	if err != ErrorInvalidCommand {
+	if err != rage.ErrorInvalidCommand {
 		t.Error(err)
 	}
 }
+*/
 
 func TestInvalidCommandFails(t *testing.T) {
 	command := "take key and run"
 
-	_, err := Parse(command)
+	_, err := rage.Parse(command)
 
-	if err != ErrorInvalidCommand {
+	if err != rage.ErrorInvalidCommand {
 		t.Error(err)
 	}
 }
@@ -25,7 +30,7 @@ func TestInvalidCommandFails(t *testing.T) {
 func TestTakeKeySucceeds(t *testing.T) {
 	command := "take key"
 
-	cmd, err := Parse(command)
+	cmd, err := rage.Parse(command)
 
 	if cmd.Action != "take" || cmd.Noun != "key" {
 		t.Errorf("Command did not parse successfully")
