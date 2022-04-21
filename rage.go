@@ -22,8 +22,8 @@ type Entity struct {
 func ParseLoop(entities []*Entity, player Entity) {
 	fmt.Println("Welcome to the text adventure, type commands to play.")
 	fmt.Println(entities[player.Location].Description)
-	fmt.Println(ListExits(entities[player.Location]))
-	fmt.Println(ListItems(entities[player.Location], entities))
+	fmt.Println(ListExits(*entities[player.Location]))
+	fmt.Println(ListItems(*entities[player.Location], entities))
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("> ")
 
@@ -54,19 +54,7 @@ func ParseLoop(entities []*Entity, player Entity) {
 
 			fmt.Printf("You are carrying %s\n", FormatItems(things))
 		case "take":
-			for index, thingId := range currentRoom.Contents {
-				if entities[thingId].Name == cmd.Noun {
-					thing := entities[thingId]
-
-					player.Contents = append(player.Contents, thingId)
-					currentRoom.Contents = slices.Delete(currentRoom.Contents, index, index+1)
-
-					thing.Location = player.Id
-
-					fmt.Printf("You take the %s.\n", cmd.Noun)
-					break
-				}
-			}
+			fmt.Println(TakeItem(entities, &player, currentRoom, cmd.Noun))
 		default:
 			newRoom, ok := currentRoom.Exits[input]
 			if !ok {
@@ -76,12 +64,29 @@ func ParseLoop(entities []*Entity, player Entity) {
 			player.Location = slices.Index(entities, newRoom)
 			currentRoom = entities[player.Location]
 			fmt.Println(currentRoom.Description)
-			fmt.Println(ListExits(currentRoom))
-			fmt.Println(ListItems(currentRoom, entities))
+			fmt.Println(ListExits(*currentRoom))
+			fmt.Println(ListItems(*currentRoom, entities))
 		}
 
 		fmt.Print("> ")
 	}
+}
+
+func TakeItem(entities []*Entity, player *Entity, currentRoom *Entity, noun string) string {
+	for index, thingId := range currentRoom.Contents {
+		if entities[thingId].Name == noun {
+			thing := entities[thingId]
+
+			player.Contents = append(player.Contents, thingId)
+			currentRoom.Contents = slices.Delete(currentRoom.Contents, index, index+1)
+
+			thing.Location = player.Id
+
+			return fmt.Sprintf("You take the %s.", noun)
+		}
+	}
+
+	return "I can't see that here."
 }
 
 func FormatItems(input []string) string {
@@ -102,24 +107,18 @@ func FormatItems(input []string) string {
 	}
 }
 
-func ListExits(room *Entity) string {
-	exitString := "You can go"
-
+func ListExits(room Entity) string {
 	exits := maps.Keys(room.Exits)
-	if len(exits) == 0 {
+	exitList := FormatItems(exits)
+
+	if exitList == "" {
 		return "There are no visible Exits."
 	}
-	if len(exits) == 1 {
-		return exitString + " " + exits[0]
-	}
 
-	exitString += strings.Join(exits[:len(exits)-1], ",")
-	exitString += " and " + exits[len(exits)-1]
-
-	return exitString
+	return "You can go " + exitList + " from here."
 }
 
-func ListItems(room *Entity, entities []*Entity) string {
+func ListItems(room Entity, entities []*Entity) string {
 	var itemNames []string
 
 	for _, itemID := range room.Contents {
@@ -133,14 +132,5 @@ func ListItems(room *Entity, entities []*Entity) string {
 		return ""
 	}
 
-	itemString := "You see here "
-
-	if len(itemNames) == 1 {
-		return itemString + itemNames[0] + "."
-	}
-
-	itemString += strings.Join(itemNames, ",")
-	itemString += " and " + itemNames[len(itemNames)-1] + "."
-
-	return itemString
+	return "You see here " + FormatItems(itemNames) + "."
 }
