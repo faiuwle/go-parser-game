@@ -1,9 +1,10 @@
 package rage_test
 
 import (
-	"github.com/faiuwle/go-parser-game/rage"
-	"golang.org/x/exp/slices"
 	"testing"
+
+	"github.com/faiuwle/go-parser-game/rage"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestFormatItems(t *testing.T) {
@@ -47,9 +48,9 @@ func TestFormatItems(t *testing.T) {
 
 func TestListExits(t *testing.T) {
 	room := rage.Entity{
-		Exits: map[string]*rage.Entity{
-			"north": nil,
-			"east":  nil,
+		Exits: map[string]rage.Exit{
+			"north": {},
+			"east":  {},
 		},
 	}
 
@@ -62,70 +63,182 @@ func TestListExits(t *testing.T) {
 }
 
 func TestListItems(t *testing.T) {
-	entities := []*rage.Entity{
-		{
-			Name: "key",
-		},
-		{
-			Name: "phone",
-		},
-		{
-			Name: "chocolate",
-		},
-	}
-
 	room := rage.Entity{
-		Contents: []int{0, 1, 2},
+		Contents: []string{"key", "phone", "chocolate"},
 	}
 
-	exitString := rage.ListItems(room, entities)
+	got := room.ListContents()
 	want := "You see here key, phone, and chocolate."
 
-	if exitString != want {
-		t.Errorf("Wanted %q, got %q", want, exitString)
+	if got != want {
+		t.Errorf("Wanted %q, got %q", want, got)
 	}
 }
 
-func TestTakeItem(t *testing.T) {
-	entities := []*rage.Entity{
-		{
-			Name: "Player",
-		},
-		{
-			Name: "key",
-		},
-		{
-			Name: "phone",
-		},
-		{
+func TestTakeItemSucceedsIfItemIsPresent(t *testing.T) {
+	entities := rage.GameData{
+		"Room": {
 			Name:     "Room",
-			Contents: []int{0, 1},
+			Contents: []string{"key", "phone"},
+		},
+		"key": {
+			Name:     "key",
+			Location: "Room",
+		},
+		"phone": {
+			Name:     "phone",
+			Location: "Room",
 		},
 	}
-
-	response := rage.TakeItem(entities, entities[0], entities[3], "key")
+	g, err := rage.NewGame(entities, "Room")
+	if err != nil {
+		t.Fatal(err)
+	}
+	response := g.TakeItem("key")
 	want := "You take the key."
 
 	if response != want {
 		t.Errorf("Wanted %q, got %q", want, response)
 	}
-
-	if !slices.Contains(entities[0].Contents, 1) {
-		t.Errorf("Key was not transferred to inventory.")
+	if !g.Player.Contains("key") {
+		t.Error("Key was not transferred to inventory.")
 	}
-
-	if slices.Contains(entities[3].Contents, 1) {
+	if g.Entities["Room"].Contains("key") {
 		t.Errorf("Key is still in the room.")
 	}
+}
 
-	response = rage.TakeItem(entities, entities[0], entities[3], "phone")
-	want = "I can't see that here."
+func TestTakeItemFailsIfItemIsNotPresent(t *testing.T) {
+	entities := rage.GameData{
+		"Room": {
+			Name:     "Room",
+			Contents: []string{"key"},
+		},
+		"key": {
+			Name:     "key",
+			Location: "Room",
+		},
+		"phone": {
+			Name: "phone",
+		},
+	}
+	g, err := rage.NewGame(entities, "Room")
+	if err != nil {
+		t.Fatal(err)
+	}
+	response := g.TakeItem("phone")
+	want := "I can't see that here."
 
 	if response != want {
 		t.Errorf("Wanted %q, got %q", want, response)
 	}
 
-	if slices.Contains(entities[0].Contents, 2) {
+	if g.Player.Contains("phone") {
 		t.Errorf("Player took the phone.")
 	}
 }
+
+func TestPlayerLocationReturnsNameOfRoomWherePlayerIs(t *testing.T) {
+	t.Parallel()
+	data := map[string]*rage.Entity{
+		"Living Room": {
+			Name:        "Living Room",
+			Description: "The living room",
+			Kind:        "Room",
+			Exits: map[string]rage.Exit{
+				"north": {
+					Destination: 1,
+				},
+			},
+		},
+		"Bedroom": {
+			Name:        "Bedroom",
+			Description: "The bedroom",
+			Kind:        "Room",
+		},
+	}
+	game, err := rage.NewGame(data, "Bedroom")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "Bedroom"
+	got := game.PlayerLocation()
+	if want != got {
+		t.Error(cmp.Diff(want, got))
+	}
+}
+
+// func TestPlayerCanUseExitToMoveBetweenRooms(t *testing.T) {
+// 	t.Parallel()
+// 	data := []*rage.Entity{
+// 		{
+// 			Id:          0,
+// 			Name:        "Living Room",
+// 			Description: "The living room",
+// 			Kind:        "Room",
+// 			Exits: map[string]rage.Exit{
+// 				"north": {
+// 					Destination: 1,
+// 				},
+// 			},
+// 		},
+// 		{
+// 			Id:          1,
+// 			Name:        "Bedroom",
+// 			Description: "The bedroom",
+// 			Kind:        "Room",
+// 		},
+// 		{
+// 			Id:       3,
+// 			Location: 0,
+// 			Kind:     "Character",
+// 		},
+// 	}
+// 	game := rage.NewGame(data)
+// 	start := game.PlayerLocation()
+// 	_ = game.Do("north")
+// 	finish := game.PlayerLocation()
+// 	if start == finish {
+// 		t.Error("player did not move rooms")
+// 	}
+// }
+
+// func TestPlayerCannotPassExitWithoutKey(t *testing.T) {
+// 	t.Parallel()
+// 	data := []*rage.Entity{
+// 		{
+// 			Id:          0,
+// 			Name:        "Living Room",
+// 			Description: "The living room",
+// 			Kind:        "Room",
+// 			Exits: map[string]rage.Exit{
+// 				"north": {
+// 					Destination: 1,
+// 					Requires:    2,
+// 				},
+// 			},
+// 		},
+// 		{
+// 			Id:          1,
+// 			Name:        "Bedroom",
+// 			Description: "The bedroom",
+// 			Kind:        "Room",
+// 		},
+// 		{
+// 			Id:       2,
+// 			Name:     "key",
+// 			Location: 1,
+// 			Kind:     "Thing",
+// 		},
+// 		{
+// 			Id:       3,
+// 			Location: 0,
+// 			Kind:     "Character",
+// 		},
+// 	}
+// 	game := rage.NewGame(data)
+// 	_ = game.Do("north")
+// 	if game.PlayerLocation() != 0 {
+// 		t.Error("player was able to move through exit without key")
+// 	}
+// }
