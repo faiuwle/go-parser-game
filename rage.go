@@ -1,7 +1,9 @@
 package rage
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 
 	"golang.org/x/exp/maps"
@@ -9,7 +11,6 @@ import (
 )
 
 type Entity struct {
-	Id          int
 	Name        string
 	Description string
 	Exits       map[string]Exit
@@ -27,61 +28,57 @@ func (e *Entity) ListContents() string {
 }
 
 type Exit struct {
-	Destination int
-	Requires    int
+	Destination string
+	Requires    string
 }
 
-// func ParseLoop(entities []*Entity, player Entity) {
-// 	fmt.Println("Welcome to the text adventure, type commands to play.")
-// 	fmt.Println(entities[player.Location].Description)
-// 	fmt.Println(ListExits(*entities[player.Location]))
-// 	fmt.Println(ListItems(*entities[player.Location], entities))
-// 	scanner := bufio.NewScanner(os.Stdin)
-// 	fmt.Print("> ")
+func Start(game *Game) {
+	fmt.Println("Welcome to the text adventure, type commands to play.")
+	fmt.Println(game.Entities[game.Player.Location].Description)
+	fmt.Println(ListExits(*game.Entities[game.Player.Location]))
+	fmt.Println(game.Entities[game.Player.Location].ListContents())
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Print("> ")
 
-// 	for scanner.Scan() {
-// 		input := scanner.Text()
-// 		cmd, err := Parse(input)
-// 		if err != nil {
-// 			fmt.Println(err)
-// 			fmt.Print("> ")
-// 			continue
-// 		}
+	for scanner.Scan() {
+		input := scanner.Text()
+		cmd, err := Parse(input)
+		if err != nil {
+			fmt.Println(err)
+			fmt.Print("> ")
+			continue
+		}
 
-// 		currentRoom := entities[player.Location]
+		currentRoom := game.Entities[game.Player.Location]
 
-// 		switch cmd.Action {
-// 		case "look":
-// 			fmt.Println(currentRoom.Description)
-// 		case "quit":
-// 			fmt.Println("Thanks for playing!")
-// 			os.Exit(0)
-// 		case "inventory":
-// 			var things []string
+		switch cmd.Action {
+		case "look":
+			fmt.Println(currentRoom.Description)
+		case "quit":
+			fmt.Println("Thanks for playing!")
+			os.Exit(0)
+		case "inventory":
+			fmt.Println(game.ListInventory())
+		case "take":
+			fmt.Println(game.TakeItem(cmd.Noun))
+		default:
+			exit, ok := currentRoom.Exits[input]
+			if !ok {
+				fmt.Println("Sorry I didn't understand.")
+				break
+			}
 
-// 			for _, thingId := range player.Contents {
-// 				things = append(things, entities[thingId].Name)
-// 			}
+			err = game.SetPlayerLocation(exit.Destination)
+			if err != nil {
+				fmt.Println(err)
+				fmt.Print("> ")
+				continue
+			}
+		}
 
-// 			fmt.Printf("You are carrying %s\n", FormatItems(things))
-// 		case "take":
-// 			fmt.Println(TakeItem(entities, &player, currentRoom, cmd.Noun))
-// 		default:
-// 			exit, ok := currentRoom.Exits[input]
-// 			if !ok {
-// 				fmt.Println("Sorry I didn't understand.")
-// 				break
-// 			}
-// 			player.Location = exit.Destination
-// 			currentRoom = entities[player.Location]
-// 			fmt.Println(currentRoom.Description)
-// 			fmt.Println(ListExits(*currentRoom))
-// 			fmt.Println(ListItems(*currentRoom, entities))
-// 		}
-
-// 		fmt.Print("> ")
-// 	}
-// }
+		fmt.Print("> ")
+	}
+}
 
 func FormatItems(input []string) string {
 	switch len(input) {
@@ -103,6 +100,7 @@ func FormatItems(input []string) string {
 
 func ListExits(room Entity) string {
 	exits := maps.Keys(room.Exits)
+	slices.Sort(exits)
 	exitList := FormatItems(exits)
 
 	if exitList == "" {
@@ -126,7 +124,12 @@ func (g *Game) SetPlayerLocation(location string) error {
 	if !ok {
 		return fmt.Errorf("unknown location %q", location)
 	}
-	g.MoveEntity("player", destination)
+	g.MoveEntity(g.Player.Name, destination.Name)
+
+	fmt.Println(destination.Description)
+	fmt.Println(ListExits(*destination))
+	fmt.Println(destination.ListContents())
+
 	return nil
 }
 
@@ -134,32 +137,35 @@ func (g *Game) PlayerLocation() string {
 	return g.Entities[g.Player.Location].Name
 }
 
+func (g *Game) ListInventory() string {
+	return "You are carrying " + FormatItems(g.Player.Contents) + "."
+}
+
 func (g *Game) TakeItem(itemName string) string {
 	currentRoom := g.Entities[g.PlayerLocation()]
 	if !currentRoom.Contains(itemName) {
 		return "I can't see that here."
 	}
-	g.MoveEntity(itemName, g.Player)
+	g.MoveEntity(itemName, g.Player.Name)
 	return fmt.Sprintf("You take the %s.", itemName)
 }
 
-func (g *Game) MoveEntity(name string, destination *Entity) {
-	e := g.Entities[name]
+func (g *Game) MoveEntity(entityToMove string, destination string) {
+	e := g.Entities[entityToMove]
 	location := g.Entities[e.Location]
-	idx := slices.Index(location.Contents, name)
+	idx := slices.Index(location.Contents, entityToMove)
 	location.Contents = slices.Delete(location.Contents, idx, idx+1)
-	destination.Contents = append(destination.Contents, name)
-	e.Location = destination.Name
+
+	d := g.Entities[destination]
+	d.Contents = append(d.Contents, entityToMove)
+	e.Location = d.Name
 }
 
 type GameData map[string]*Entity
 
-func NewGame(data GameData, startLocation string) (*Game, error) {
+func NewGame(data GameData, startPlayer string) (*Game, error) {
 	return &Game{
 		Entities: data,
-		Player: &Entity{
-			Name:     "Default Player",
-			Location: startLocation,
-		},
+		Player:   data[startPlayer],
 	}, nil
 }

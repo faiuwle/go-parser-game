@@ -1,4 +1,7 @@
-- Ability to interact with objects
+X Take and have items
+- Require an item for an exit
 X Ability to list objects
 - Abbreviate direction commands
-- Ability to link an exit with an object
+- Update everything to use string as entity reference rather than index or id
+- Remove the need to specify the location of things twice
+- Implement Game.Do(string)
