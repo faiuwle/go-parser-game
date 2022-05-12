@@ -2,7 +2,9 @@ package rage
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -19,6 +21,14 @@ type Entity struct {
 	Kind        string
 }
 
+const (
+	DefaultExitFailureMessage = "You cannot do that."
+)
+
+var (
+	ErrorExitRequirementNotMet = errors.New("exit requirement not met")
+)
+
 func (e *Entity) Contains(name string) bool {
 	return slices.Contains(e.Contents, name)
 }
@@ -27,9 +37,30 @@ func (e *Entity) ListContents() string {
 	return "You see here " + FormatItems(e.Contents) + "."
 }
 
+func ListExits(room Entity) string {
+	exits := maps.Keys(room.Exits)
+	slices.Sort(exits)
+	exitList := FormatItems(exits)
+
+	if exitList == "" {
+		return "There are no visible Exits."
+	}
+
+	return "You can go " + exitList + " from here."
+}
+
 type Exit struct {
-	Destination string
-	Requires    string
+	Destination    string
+	Requires       string
+	FailureMessage string
+}
+
+func (e *Exit) GetFailureMessage() string {
+	if e.FailureMessage == "" {
+		return DefaultExitFailureMessage
+	}
+
+	return e.FailureMessage
 }
 
 func Start(game *Game) {
@@ -49,31 +80,12 @@ func Start(game *Game) {
 			continue
 		}
 
-		currentRoom := game.Entities[game.Player.Location]
+		err = game.Do(cmd)
 
-		switch cmd.Action {
-		case "look":
-			fmt.Println(currentRoom.Description)
-		case "quit":
-			fmt.Println("Thanks for playing!")
-			os.Exit(0)
-		case "inventory":
-			fmt.Println(game.ListInventory())
-		case "take":
-			fmt.Println(game.TakeItem(cmd.Noun))
-		default:
-			exit, ok := currentRoom.Exits[input]
-			if !ok {
-				fmt.Println("Sorry I didn't understand.")
-				break
-			}
-
-			err = game.SetPlayerLocation(exit.Destination)
-			if err != nil {
-				fmt.Println(err)
-				fmt.Print("> ")
-				continue
-			}
+		if errors.Is(err, ErrorInvalidCommand) {
+			fmt.Println("Sorry I didn't understand.")
+		} else if err != nil {
+			fmt.Println(err)
 		}
 
 		fmt.Print("> ")
@@ -98,37 +110,70 @@ func FormatItems(input []string) string {
 	}
 }
 
-func ListExits(room Entity) string {
-	exits := maps.Keys(room.Exits)
-	slices.Sort(exits)
-	exitList := FormatItems(exits)
-
-	if exitList == "" {
-		return "There are no visible Exits."
-	}
-
-	return "You can go " + exitList + " from here."
-}
-
 type Game struct {
 	Entities GameData
+	Output   io.Writer
 	Player   *Entity
 }
 
-func (g *Game) Do(string) error {
+func (g *Game) Do(cmd Command) error {
+	currentRoom := g.Entities[g.Player.Location]
+
+	switch cmd.Action {
+	case "look":
+		g.Say(currentRoom.Description)
+	case "quit":
+		g.Say("Thanks for playing!")
+		os.Exit(0)
+	case "inventory":
+		g.Say(g.ListInventory())
+	case "take":
+		g.Say(g.TakeItem(cmd.Noun))
+	//case "north":
+	//case "south":
+	//case "east":
+	//case "west":
+	default:
+		exit, ok := currentRoom.Exits[cmd.Action]
+		if !ok {
+			return ErrorInvalidCommand
+		}
+
+		err := g.SetPlayerLocation(exit)
+
+		if errors.Is(err, ErrorExitRequirementNotMet) {
+			g.Say(exit.GetFailureMessage())
+			return nil
+		}
+
+		if err != nil {
+			return err
+		}
+
+		currentRoom = g.Entities[g.Player.Location]
+		g.Say(currentRoom.Description)
+		g.Say(ListExits(*currentRoom))
+		g.Say(currentRoom.ListContents())
+	}
+
 	return nil
 }
 
-func (g *Game) SetPlayerLocation(location string) error {
-	destination, ok := g.Entities[location]
-	if !ok {
-		return fmt.Errorf("unknown location %q", location)
-	}
-	g.MoveEntity(g.Player.Name, destination.Name)
+func (g *Game) Say(message string) {
+	fmt.Fprintln(g.Output, message)
+}
 
-	fmt.Println(destination.Description)
-	fmt.Println(ListExits(*destination))
-	fmt.Println(destination.ListContents())
+func (g *Game) SetPlayerLocation(exit Exit) error {
+	if exit.Requires != "" && !slices.Contains(g.Player.Contents, exit.Requires) {
+		return ErrorExitRequirementNotMet
+	}
+
+	destination, ok := g.Entities[exit.Destination]
+	if !ok {
+		return fmt.Errorf("unknown location %q", exit.Destination)
+	}
+
+	g.MoveEntity(g.Player.Name, destination.Name)
 
 	return nil
 }
@@ -151,21 +196,22 @@ func (g *Game) TakeItem(itemName string) string {
 }
 
 func (g *Game) MoveEntity(entityToMove string, destination string) {
-	e := g.Entities[entityToMove]
-	location := g.Entities[e.Location]
+	entity := g.Entities[entityToMove]
+	location := g.Entities[entity.Location]
 	idx := slices.Index(location.Contents, entityToMove)
 	location.Contents = slices.Delete(location.Contents, idx, idx+1)
 
 	d := g.Entities[destination]
 	d.Contents = append(d.Contents, entityToMove)
-	e.Location = d.Name
+	entity.Location = d.Name
 }
 
 type GameData map[string]*Entity
 
-func NewGame(data GameData, startPlayer string) (*Game, error) {
+func NewGame(data GameData, startPlayer string, output io.Writer) (*Game, error) {
 	return &Game{
 		Entities: data,
+		Output:   output,
 		Player:   data[startPlayer],
 	}, nil
 }

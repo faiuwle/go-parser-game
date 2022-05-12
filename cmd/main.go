@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/faiuwle/go-parser-game/rage"
 )
@@ -14,7 +15,9 @@ func main() {
 			Kind:        "Room",
 			Exits: map[string]rage.Exit{
 				"north": {
-					Destination: "Bedroom",
+					Destination:    "Bedroom",
+					Requires:       "key",
+					FailureMessage: "You rattle the handle, but the door seems locked.",
 				},
 			},
 			Contents: []string{"key", "Shera"},
@@ -40,7 +43,7 @@ func main() {
 		},
 	}
 
-	game, err := rage.NewGame(data, "Shera")
+	game, err := rage.NewGame(data, "Shera", os.Stdout)
 	if err != nil {
 		fmt.Printf("%v", err)
 	}

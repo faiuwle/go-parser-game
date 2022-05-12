@@ -1,6 +1,9 @@
 package rage_test
 
 import (
+	"bytes"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -95,7 +98,7 @@ func TestTakeItemSucceedsIfItemIsPresent(t *testing.T) {
 			Location: "Room",
 		},
 	}
-	g, err := rage.NewGame(entities, "player")
+	g, err := rage.NewGame(entities, "player", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +134,7 @@ func TestTakeItemFailsIfItemIsNotPresent(t *testing.T) {
 			Location: "Room",
 		},
 	}
-	g, err := rage.NewGame(entities, "player")
+	g, err := rage.NewGame(entities, "player", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +174,7 @@ func TestPlayerLocationReturnsNameOfRoomWherePlayerIs(t *testing.T) {
 			Location: "Bedroom",
 		},
 	}
-	game, err := rage.NewGame(data, "player")
+	game, err := rage.NewGame(data, "player", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,20 +210,80 @@ func TestPlayerCanUseExitToMoveBetweenRooms(t *testing.T) {
 			Location: "Living Room",
 		},
 	}
-	game, err := rage.NewGame(data, "player")
+	game, err := rage.NewGame(data, "player", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	cmd := rage.Command{Action: "north"}
 	start := game.PlayerLocation()
-	_ = game.Do("north")
+	err = game.Do(cmd)
 	finish := game.PlayerLocation()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if start == finish {
 		t.Error("player did not move rooms")
 	}
 }
 
 func TestPlayerCannotPassExitWithoutKey(t *testing.T) {
+	t.Parallel()
+	data := map[string]*rage.Entity{
+		"Living Room": {
+			Name:        "Living Room",
+			Description: "The living room",
+			Kind:        "Room",
+			Exits: map[string]rage.Exit{
+				"north": {
+					Destination:    "Bedroom",
+					Requires:       "key",
+					FailureMessage: "The door appears to be locked.",
+				},
+			},
+			Contents: []string{"key", "player"},
+		},
+		"Bedroom": {
+			Name:        "Bedroom",
+			Description: "The bedroom",
+			Kind:        "Room",
+		},
+		"key": {
+			Name:     "key",
+			Location: "Living Room",
+			Kind:     "Thing",
+		},
+		"player": {
+			Name:     "player",
+			Location: "Living Room",
+			Kind:     "Character",
+		},
+	}
+
+	writer := bytes.Buffer{}
+	game, err := rage.NewGame(data, "player", &writer)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := rage.Command{Action: "north"}
+	start := game.PlayerLocation()
+	_ = game.Do(cmd)
+	finish := game.PlayerLocation()
+
+	want := "The door appears to be locked."
+	got := strings.TrimSpace(writer.String())
+	if got != want {
+		t.Error(cmp.Diff(want, got))
+	}
+
+	if start != finish {
+		t.Error("player was able to move through exit without key")
+	}
+}
+
+func TestPlayerCannotPassExitWithoutKeyAndSeesDefaultFailureMessage(t *testing.T) {
 	t.Parallel()
 	data := map[string]*rage.Entity{
 		"Living Room": {
@@ -251,14 +314,23 @@ func TestPlayerCannotPassExitWithoutKey(t *testing.T) {
 			Kind:     "Character",
 		},
 	}
-	game, err := rage.NewGame(data, "player")
+	writer := bytes.Buffer{}
+	game, err := rage.NewGame(data, "player", &writer)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	cmd := rage.Command{Action: "north"}
 	start := game.PlayerLocation()
-	_ = game.Do("north")
+	_ = game.Do(cmd)
 	finish := game.PlayerLocation()
+
+	want := rage.DefaultExitFailureMessage
+	got := strings.TrimSpace(writer.String())
+	if got != want {
+		t.Error(cmp.Diff(want, got))
+	}
+
 	if start != finish {
 		t.Error("player was able to move through exit without key")
 	}
