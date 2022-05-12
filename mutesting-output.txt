@@ -1,0 +1,341 @@
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/commandParser.go.0" with checksum 4de032f335089f49e8ff1399c94d41ef
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/commandParser.go.1" with checksum 2528ac5c9f6bafcbbde0c4b3da9cbe02
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/commandParser.go.2" with checksum 9e38845b6f0ad3bb70cc4afdcee6ef3f
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.0" with checksum 37a59d4d9b93c4ca1e34bb6e4bffd47f
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.1" with checksum 8ed63e0dd3a1798697c798cb7208635d
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.2" with checksum 7739fb8c8f2d18db94811458f82f22cb
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.3" with checksum b1a46a81feb49e5d44f59b900c033be9
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.4"       2022-05-12 13:07:43.164871800 -0400
+@@ -121,7 +121,7 @@
+
+        switch cmd.Action {
+        case "look":
+-               g.Say(currentRoom.Description)
++               _, _ = g.Say, currentRoom.Description
+        case "quit":
+                g.Say("Thanks for playing!")
+                os.Exit(0)
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.4" with checksum 184ea235ae8ceb770deae331db561f46
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.5"       2022-05-12 13:07:46.073083200 -0400
+@@ -123,8 +123,8 @@
+        case "look":
+                g.Say(currentRoom.Description)
+        case "quit":
+-               g.Say("Thanks for playing!")
+-               os.Exit(0)
++               _, _ = g.Say,
++                       os.Exit
+        case "inventory":
+                g.Say(g.ListInventory())
+        case "take":
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.5" with checksum 94cc1c7e7902427fc285de65aef563f1
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.6"       2022-05-12 13:07:49.114020100 -0400
+@@ -126,7 +126,7 @@
+                g.Say("Thanks for playing!")
+                os.Exit(0)
+        case "inventory":
+-               g.Say(g.ListInventory())
++               _, _ = g.Say, g.ListInventory
+        case "take":
+                g.Say(g.TakeItem(cmd.Noun))
+        //case "north":
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.6" with checksum 1e0079a370ec08c2a0b2d180ee056ad5
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.7"       2022-05-12 13:07:52.600053800 -0400
+@@ -128,7 +128,7 @@
+        case "inventory":
+                g.Say(g.ListInventory())
+        case "take":
+-               g.Say(g.TakeItem(cmd.Noun))
++               _, _, _ = g.Say, g.TakeItem, cmd.Noun
+        //case "north":
+        //case "south":
+        //case "east":
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.7" with checksum 9ea4cdb61e494a8326794167842aa971
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.8" with checksum bdbc048c76a3aa5f0ddf14befca95e5e
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.9"       2022-05-12 13:07:58.506198000 -0400
+@@ -43,7 +43,7 @@
+        exitList := FormatItems(exits)
+
+        if exitList == "" {
+-               return "There are no visible Exits."
++
+        }
+
+        return "You can go " + exitList + " from here."
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.9" with checksum 2ef7c3d4656c6ebe8ef8c35e8de2af47
+PASS "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.10" with checksum fdd9268e73086e501ce1cbc13e872ff5
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.11"      2022-05-12 13:08:07.560888500 -0400
+@@ -75,9 +75,8 @@
+                input := scanner.Text()
+                cmd, err := Parse(input)
+                if err != nil {
+-                       fmt.Println(err)
+-                       fmt.Print("> ")
+-                       continue
++                       _, _, _ = fmt.Println, err, fmt.Print
++
+                }
+
+                err = game.Do(cmd)
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.11" with checksum e4de48ddfac5cb0acb27141a45c8f242
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.12"      2022-05-12 13:08:10.455639100 -0400
+@@ -83,7 +83,7 @@
+                err = game.Do(cmd)
+
+                if errors.Is(err, ErrorInvalidCommand) {
+-                       fmt.Println("Sorry I didn't understand.")
++                       _ = fmt.Println
+                } else if err != nil {
+                        fmt.Println(err)
+                }
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.12" with checksum fc920755fa8a1b7cce2eee061809afa5
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.13"      2022-05-12 13:08:13.350384100 -0400
+@@ -85,7 +85,7 @@
+                if errors.Is(err, ErrorInvalidCommand) {
+                        fmt.Println("Sorry I didn't understand.")
+                } else if err != nil {
+-                       fmt.Println(err)
++                       _, _ = fmt.Println, err
+                }
+
+                fmt.Print("> ")
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.13" with checksum fca3617914c3272408c46e2e2a29f0b8
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.14"      2022-05-12 13:08:14.864954100 -0400
+@@ -136,7 +136,8 @@
+        default:
+                exit, ok := currentRoom.Exits[cmd.Action]
+                if !ok {
+-                       return ErrorInvalidCommand
++                       _ = ErrorInvalidCommand
++
+                }
+
+                err := g.SetPlayerLocation(exit)
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.14" with checksum c70bd2999505dc0ff44d268813b07bf1
+PASS "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.15" with checksum fad7e6f3b5529d2db5843469478ab014
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.16"      2022-05-12 13:08:21.232678500 -0400
+@@ -147,7 +147,8 @@
+                }
+
+                if err != nil {
+-                       return err
++                       _ = err
++
+                }
+
+                currentRoom = g.Entities[g.Player.Location]
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.16" with checksum 3a07a5d563b611b3b7bc9bc9e496c9bf
+PASS "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.17" with checksum a3716e827f0e8559eecaee106d07f299
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.18"      2022-05-12 13:08:27.700984000 -0400
+@@ -170,7 +170,7 @@
+
+        destination, ok := g.Entities[exit.Destination]
+        if !ok {
+-               return fmt.Errorf("unknown location %q", exit.Destination)
++               _, _ = fmt.Errorf, exit.Destination
+        }
+
+        g.MoveEntity(g.Player.Name, destination.Name)
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.18" with checksum b63b7f985b1aa881363f1a108ff785cd
+PASS "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.19" with checksum 17f6c3e9c0adf8393eba6d1f651fbffc
+PASS "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.20" with checksum 42955217331271e9247032db284ab819
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.21"      2022-05-12 13:08:38.766622400 -0400
+@@ -164,7 +164,7 @@
+ }
+
+ func (g *Game) SetPlayerLocation(exit Exit) error {
+-       if exit.Requires != "" && !slices.Contains(g.Player.Contents, exit.Requires) {
++       if exit.Requires != "" && true {
+                return ErrorExitRequirementNotMet
+        }
+
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.21" with checksum 825f22e11d75fe89f564edbd25680e7f
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.22" with checksum cc3c8a078249bda9aeb4eaf94ea6ab23
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.23"      2022-05-12 13:08:42.386277200 -0400
+@@ -64,7 +64,7 @@
+ }
+
+ func Start(game *Game) {
+-       fmt.Println("Welcome to the text adventure, type commands to play.")
++       _ = fmt.Println
+        fmt.Println(game.Entities[game.Player.Location].Description)
+        fmt.Println(ListExits(*game.Entities[game.Player.Location]))
+        fmt.Println(game.Entities[game.Player.Location].ListContents())
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.23" with checksum e428b70191a7699322eb98f4d608fc96
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.24"      2022-05-12 13:08:44.011862700 -0400
+@@ -65,7 +65,7 @@
+
+ func Start(game *Game) {
+        fmt.Println("Welcome to the text adventure, type commands to play.")
+-       fmt.Println(game.Entities[game.Player.Location].Description)
++       _ = fmt.Println
+        fmt.Println(ListExits(*game.Entities[game.Player.Location]))
+        fmt.Println(game.Entities[game.Player.Location].ListContents())
+        scanner := bufio.NewScanner(os.Stdin)
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.24" with checksum 899521678e778cd07f1fe264ce0df9a6
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.25" with checksum aef62cb76837f5a06fc7300e6c687f4f
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.26"      2022-05-12 13:08:46.469639300 -0400
+@@ -67,7 +67,7 @@
+        fmt.Println("Welcome to the text adventure, type commands to play.")
+        fmt.Println(game.Entities[game.Player.Location].Description)
+        fmt.Println(ListExits(*game.Entities[game.Player.Location]))
+-       fmt.Println(game.Entities[game.Player.Location].ListContents())
++       _ = fmt.Println
+        scanner := bufio.NewScanner(os.Stdin)
+        fmt.Print("> ")
+
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.26" with checksum 2f7389890ab7a2272d5eafe7457e69c6
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.27"      2022-05-12 13:08:48.011278300 -0400
+@@ -69,7 +69,7 @@
+        fmt.Println(ListExits(*game.Entities[game.Player.Location]))
+        fmt.Println(game.Entities[game.Player.Location].ListContents())
+        scanner := bufio.NewScanner(os.Stdin)
+-       fmt.Print("> ")
++       _ = fmt.Print
+
+        for scanner.Scan() {
+                input := scanner.Text()
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.27" with checksum c8c07d81c1356a32bfd8c3bfa9d80dc6
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.28"      2022-05-12 13:08:49.488267900 -0400
+@@ -79,8 +79,7 @@
+                        fmt.Print("> ")
+                        continue
+                }
+-
+-               err = game.Do(cmd)
++               _, _, _ = err, game.Do, cmd
+
+                if errors.Is(err, ErrorInvalidCommand) {
+                        fmt.Println("Sorry I didn't understand.")
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.28" with checksum 3f50882f594cefe061832c82723f1c4c
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.29"      2022-05-12 13:08:51.704808100 -0400
+@@ -87,8 +87,7 @@
+                } else if err != nil {
+                        fmt.Println(err)
+                }
+-
+-               fmt.Print("> ")
++               _ = fmt.Print
+        }
+ }
+
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.29" with checksum f7efff1b42c20229943a0bc725af083f
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.30"      2022-05-12 13:08:53.894652900 -0400
+@@ -75,7 +75,7 @@
+                input := scanner.Text()
+                cmd, err := Parse(input)
+                if err != nil {
+-                       fmt.Println(err)
++                       _, _ = fmt.Println, err
+                        fmt.Print("> ")
+                        continue
+                }
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.30" with checksum d5b9a1dce841a07b5898e6e32e7642bb
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.31"      2022-05-12 13:08:56.040141800 -0400
+@@ -76,7 +76,7 @@
+                cmd, err := Parse(input)
+                if err != nil {
+                        fmt.Println(err)
+-                       fmt.Print("> ")
++                       _ = fmt.Print
+                        continue
+                }
+
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.31" with checksum ada6c26b12327972ea434e7c145e524f
+PASS "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.34" with checksum ee79e3ff090d4d66f847c248f4fbd02e
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.36"      2022-05-12 13:09:01.026531800 -0400
+@@ -123,7 +123,7 @@
+        case "look":
+                g.Say(currentRoom.Description)
+        case "quit":
+-               g.Say("Thanks for playing!")
++               _ = g.Say
+                os.Exit(0)
+        case "inventory":
+                g.Say(g.ListInventory())
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.36" with checksum 24d019f2aabb68a636c2b508239023dd
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.37"      2022-05-12 13:09:04.516610200 -0400
+@@ -124,7 +124,7 @@
+                g.Say(currentRoom.Description)
+        case "quit":
+                g.Say("Thanks for playing!")
+-               os.Exit(0)
++               _ = os.Exit
+        case "inventory":
+                g.Say(g.ListInventory())
+        case "take":
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.37" with checksum 136467fcdc003aaae268b25edd2d229e
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.40" with checksum f3498d7660330336fc56d3d79b4a03a0
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.41"      2022-05-12 13:09:08.251383900 -0400
+@@ -151,7 +151,7 @@
+                }
+
+                currentRoom = g.Entities[g.Player.Location]
+-               g.Say(currentRoom.Description)
++               _, _ = g.Say, currentRoom.Description
+                g.Say(ListExits(*currentRoom))
+                g.Say(currentRoom.ListContents())
+        }
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.41" with checksum 24155a32e7ca5c17c1d760c8783987bf
+--- rage.go     2022-05-12 12:48:28.592341200 -0400
++++ "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.42"      2022-05-12 13:09:11.075030000 -0400
+@@ -152,7 +152,7 @@
+
+
+        return nil
+
+FAIL "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.43" with checksum e5468fa0c5e342a01924a318f39c3538
+PASS "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.44" with checksum 0220b4ff34a44cc37a3bfd766fc3443d
+PASS "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.45" with checksum 3b1aac0022e241cb1a1fa968674af60b
+PASS "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.46" with checksum f8f1e53474eb08b5a17f7627a6d726d0
+PASS "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.47" with checksum 6a9dce5601886f165757a110bd5679dd
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.48" with checksum 486738b01dab4df42c007629c1390f1e
+SKIP "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.49" with checksum f82da19132c4e52a143633df6c984248
+PASS "C:\\Users\\BRIANH~1\\AppData\\Local\\Temp\\go-mutesting-870096190/rage.go.50" with checksum 30713cbf73b51de0074305da395b1348
+The mutation score is 0.224490 (11 passed, 25 failed, 5 duplicated, 13 skipped, total is 49)
