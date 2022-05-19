@@ -111,7 +111,7 @@ func TestTakeItemSucceedsIfItemIsPresent(t *testing.T) {
 	if !g.Player.Contains("key") {
 		t.Error("Key was not transferred to inventory.")
 	}
-	if g.Entities["Room"].Contains("key") {
+	if g.GetEntity("Room").Contains("key") {
 		t.Errorf("Key is still in the room.")
 	}
 }
@@ -152,6 +152,12 @@ func TestTakeItemFailsIfItemIsNotPresent(t *testing.T) {
 
 func TestPlayerLocationReturnsNameOfRoomWherePlayerIs(t *testing.T) {
 	t.Parallel()
+	bedroom := &rage.Entity{
+		Name:        "Bedroom",
+		Description: "The bedroom",
+		Kind:        "Room",
+		Contents:    []string{"player"},
+	}
 	data := map[string]*rage.Entity{
 		"Living Room": {
 			Name:        "Living Room",
@@ -163,12 +169,7 @@ func TestPlayerLocationReturnsNameOfRoomWherePlayerIs(t *testing.T) {
 				},
 			},
 		},
-		"Bedroom": {
-			Name:        "Bedroom",
-			Description: "The bedroom",
-			Kind:        "Room",
-			Contents:    []string{"player"},
-		},
+		"Bedroom": bedroom,
 		"player": {
 			Name:     "player",
 			Location: "Bedroom",
@@ -178,7 +179,7 @@ func TestPlayerLocationReturnsNameOfRoomWherePlayerIs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "Bedroom"
+	want := bedroom
 	got := game.PlayerLocation()
 	if want != got {
 		t.Error(cmp.Diff(want, got))
@@ -333,5 +334,96 @@ func TestPlayerCannotPassExitWithoutKeyAndSeesDefaultFailureMessage(t *testing.T
 
 	if start != finish {
 		t.Error("player was able to move through exit without key")
+	}
+}
+
+func TestGetEntityPanicsWhenGivenNonExistentEntity(t *testing.T) {
+	data := map[string]*rage.Entity{}
+	game, err := rage.NewGame(data, "player", io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("GetEntity did not panic")
+		}
+	}()
+	game.GetEntity("whatever")
+}
+
+func TestGetEntityReturnsEntityWhenItExists(t *testing.T) {
+	want := &rage.Entity{Name: "entity"}
+	data := map[string]*rage.Entity{
+		want.Name: want,
+	}
+	game, err := rage.NewGame(data, "player", io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	entity := game.GetEntity(want.Name)
+	if entity != want {
+		t.Fatalf("Found %#v instead of %#v", entity, want)
+	}
+}
+
+func TestNewGameReturnsErrorWithInconsistentData(t *testing.T) {
+	testCases := map[string]rage.GameData{
+		"non-existent location": {
+			"object": &rage.Entity{
+				Name:     "object",
+				Location: "non-existent",
+				Kind:     "Thing",
+			},
+			"player": {
+				Name: "player",
+			},
+		},
+		"non-existant object in room": {
+			"room": &rage.Entity{
+				Name: "room",
+				Contents: []string{
+					"non-existent",
+				},
+				Kind: "Room",
+			},
+			"player": {
+				Name: "player",
+			},
+		},
+		"empty location on thing": {
+			"object": &rage.Entity{
+				Name:     "object",
+				Location: "",
+				Kind:     "Thing",
+			},
+			"player": {
+				Name: "player",
+			},
+		},
+		"non-empty location on room": {
+			"room": &rage.Entity{
+				Name:     "room",
+				Location: "somewhere",
+				Kind:     "Room",
+			},
+			"somewhere": &rage.Entity{
+				Name:     "somewhere",
+				Location: "room",
+				Kind:     "Room",
+			},
+			"player": {
+				Name: "player",
+			},
+		},
+		"no player in game data": {},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			_, err := rage.NewGame(tc, "player", io.Discard)
+			if err == nil {
+				t.Fatal("Did not fail with invalid game data")
+			}
+		})
 	}
 }

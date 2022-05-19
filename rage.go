@@ -65,9 +65,10 @@ func (e *Exit) GetFailureMessage() string {
 
 func Start(game *Game) {
 	fmt.Println("Welcome to the text adventure, type commands to play.")
-	fmt.Println(game.Entities[game.Player.Location].Description)
-	fmt.Println(ListExits(*game.Entities[game.Player.Location]))
-	fmt.Println(game.Entities[game.Player.Location].ListContents())
+	startRoom := game.PlayerLocation()
+	fmt.Println(startRoom.Description)
+	fmt.Println(ListExits(*startRoom))
+	fmt.Println(startRoom.ListContents())
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("> ")
 
@@ -117,7 +118,7 @@ type Game struct {
 }
 
 func (g *Game) Do(cmd Command) error {
-	currentRoom := g.Entities[g.Player.Location]
+	currentRoom := g.PlayerLocation()
 
 	switch cmd.Action {
 	case "look":
@@ -146,17 +147,22 @@ func (g *Game) Do(cmd Command) error {
 			return nil
 		}
 
-		if err != nil {
-			return err
-		}
-
-		currentRoom = g.Entities[g.Player.Location]
+		currentRoom = g.PlayerLocation()
 		g.Say(currentRoom.Description)
 		g.Say(ListExits(*currentRoom))
 		g.Say(currentRoom.ListContents())
 	}
 
 	return nil
+}
+
+func (g *Game) GetEntity(entityName string) *Entity {
+	entity, ok := g.Entities[entityName]
+	if !ok {
+		message := fmt.Sprintf("Inconsistent game data: %s not in entity list", entityName)
+		panic(message)
+	}
+	return entity
 }
 
 func (g *Game) Say(message string) {
@@ -168,18 +174,13 @@ func (g *Game) SetPlayerLocation(exit Exit) error {
 		return ErrorExitRequirementNotMet
 	}
 
-	destination, ok := g.Entities[exit.Destination]
-	if !ok {
-		return fmt.Errorf("unknown location %q", exit.Destination)
-	}
-
-	g.MoveEntity(g.Player.Name, destination.Name)
+	g.MoveEntity(g.Player.Name, exit.Destination)
 
 	return nil
 }
 
-func (g *Game) PlayerLocation() string {
-	return g.Entities[g.Player.Location].Name
+func (g *Game) PlayerLocation() *Entity {
+	return g.GetEntity(g.Player.Location)
 }
 
 func (g *Game) ListInventory() string {
@@ -187,7 +188,7 @@ func (g *Game) ListInventory() string {
 }
 
 func (g *Game) TakeItem(itemName string) string {
-	currentRoom := g.Entities[g.PlayerLocation()]
+	currentRoom := g.PlayerLocation()
 	if !currentRoom.Contains(itemName) {
 		return "I can't see that here."
 	}
@@ -196,19 +197,39 @@ func (g *Game) TakeItem(itemName string) string {
 }
 
 func (g *Game) MoveEntity(entityToMove string, destination string) {
-	entity := g.Entities[entityToMove]
-	location := g.Entities[entity.Location]
+	entity := g.GetEntity(entityToMove)
+	location := g.GetEntity(entity.Location)
 	idx := slices.Index(location.Contents, entityToMove)
 	location.Contents = slices.Delete(location.Contents, idx, idx+1)
 
-	d := g.Entities[destination]
+	d := g.GetEntity(destination)
 	d.Contents = append(d.Contents, entityToMove)
 	entity.Location = d.Name
 }
 
 type GameData map[string]*Entity
 
+func (gd GameData) Missing(entityName string) bool {
+	_, ok := gd[entityName]
+	return !ok
+}
+
 func NewGame(data GameData, startPlayer string, output io.Writer) (*Game, error) {
+	for _, val := range data {
+		if val.Kind == "Room" {
+			if val.Location != "" {
+				return nil, fmt.Errorf("Rooms cannot have locations: %#v has a location", val)
+			}
+		}
+		if data.Missing(val.Location) {
+			return nil, fmt.Errorf("%#v has invalid location", val)
+		}
+	}
+
+	if data.Missing(startPlayer) {
+		return nil, fmt.Errorf("StartPlayer %s is not defined in data", startPlayer)
+	}
+
 	return &Game{
 		Entities: data,
 		Output:   output,
