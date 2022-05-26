@@ -79,25 +79,39 @@ func TestListContents(t *testing.T) {
 	}
 }
 
+var commonGameData = rage.GameData{
+	"Living Room": {
+		Name:        "Living Room",
+		Description: "The living room",
+		Kind:        "Room",
+		Exits: map[string]rage.Exit{
+			"north": {
+				Destination:    "Bedroom",
+				Requires:       "key",
+				FailureMessage: "The door appears to be locked.",
+			},
+		},
+		Contents: []string{"key", "player"},
+	},
+	"Bedroom": {
+		Name:        "Bedroom",
+		Description: "The bedroom",
+		Kind:        "Room",
+	},
+	"key": {
+		Name:     "key",
+		Location: "Living Room",
+		Kind:     "Thing",
+	},
+	"player": {
+		Name:     "player",
+		Location: "Living Room",
+		Kind:     "Character",
+	},
+}
+
 func TestTakeItemSucceedsIfItemIsPresent(t *testing.T) {
-	entities := rage.GameData{
-		"Room": {
-			Name:     "Room",
-			Contents: []string{"key", "phone", "player"},
-		},
-		"key": {
-			Name:     "key",
-			Location: "Room",
-		},
-		"phone": {
-			Name:     "phone",
-			Location: "Room",
-		},
-		"player": {
-			Name:     "player",
-			Location: "Room",
-		},
-	}
+	entities := commonGameData
 	g, err := rage.NewGame(entities, "player", io.Discard)
 	if err != nil {
 		t.Fatal(err)
