@@ -441,3 +441,45 @@ func TestNewGameReturnsErrorWithInconsistentData(t *testing.T) {
 		})
 	}
 }
+
+func TestNewGameCreatesGameFromConsistentData(t *testing.T) {
+	data := map[string]*rage.Entity{
+		"Living Room": {
+			Name:        "Living Room",
+			Description: "The living room",
+			Kind:        "Room",
+			Exits: map[string]rage.Exit{
+				"north": {
+					Destination:    "Bedroom",
+					Requires:       "key",
+					FailureMessage: "You rattle the handle, but the door seems locked.",
+				},
+			},
+			Contents: []string{"key", "Shera"},
+		},
+		"Bedroom": {
+			Name:        "Bedroom",
+			Description: "The bedroom",
+			Exits: map[string]rage.Exit{
+				"south": {
+					Destination: "Living Room",
+				},
+			},
+			Kind: "Room",
+		},
+		"key": {
+			Name:     "key",
+			Location: "Living Room",
+			Kind:     "Thing",
+		},
+		"Shera": {
+			Name:     "Shera",
+			Location: "Living Room",
+		},
+	}
+
+	_, err := rage.NewGame(data, "Shera", io.Discard)
+	if err != nil {
+		t.Fatalf("Errored on consistent game data: %s", err)
+	}
+}

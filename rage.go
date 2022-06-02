@@ -112,7 +112,7 @@ func FormatItems(input []string) string {
 }
 
 type Game struct {
-	Entities GameData
+	Entities map[string]*Entity
 	Output   io.Writer
 	Player   *Entity
 }
@@ -207,32 +207,38 @@ func (g *Game) MoveEntity(entityToMove string, destination string) {
 	entity.Location = d.Name
 }
 
-type GameData map[string]*Entity
+type GameData struct {
+	Data        map[string]*Entity
+	StartPlayer string
+}
 
 func (gd GameData) Missing(entityName string) bool {
-	_, ok := gd[entityName]
+	_, ok := gd.Data[entityName]
 	return !ok
 }
 
-func NewGame(data GameData, startPlayer string, output io.Writer) (*Game, error) {
-	for _, val := range data {
+func NewGame(data GameData, output io.Writer) (*Game, error) {
+	for _, val := range data.Data {
 		if val.Kind == "Room" {
 			if val.Location != "" {
 				return nil, fmt.Errorf("Rooms cannot have locations: %#v has a location", val)
 			}
+			continue
 		}
 		if data.Missing(val.Location) {
 			return nil, fmt.Errorf("%#v has invalid location", val)
 		}
 	}
 
+	startPlayer := data.StartPlayer
+
 	if data.Missing(startPlayer) {
 		return nil, fmt.Errorf("StartPlayer %s is not defined in data", startPlayer)
 	}
 
 	return &Game{
-		Entities: data,
+		Entities: data.Data,
 		Output:   output,
-		Player:   data[startPlayer],
+		Player:   data.Data[startPlayer],
 	}, nil
 }

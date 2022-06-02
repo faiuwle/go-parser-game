@@ -1,49 +1,25 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/faiuwle/go-parser-game/rage"
 )
 
+//go:embed "game.json"
+var standardData string
+
 func main() {
-	data := map[string]*rage.Entity{
-		"Living Room": {
-			Name:        "Living Room",
-			Description: "The living room",
-			Kind:        "Room",
-			Exits: map[string]rage.Exit{
-				"north": {
-					Destination:    "Bedroom",
-					Requires:       "key",
-					FailureMessage: "You rattle the handle, but the door seems locked.",
-				},
-			},
-			Contents: []string{"key", "Shera"},
-		},
-		"Bedroom": {
-			Name:        "Bedroom",
-			Description: "The bedroom",
-			Exits: map[string]rage.Exit{
-				"south": {
-					Destination: "Living Room",
-				},
-			},
-			Kind: "Room",
-		},
-		"key": {
-			Name:     "key",
-			Location: "Living Room",
-			Kind:     "Thing",
-		},
-		"Shera": {
-			Name:     "Shera",
-			Location: "Living Room",
-		},
+	data, err := rage.ReadConfig(strings.NewReader(standardData))
+	if err != nil {
+		fmt.Printf("Error reading game data: %s", err)
+		os.Exit(1)
 	}
 
-	game, err := rage.NewGame(data, "Shera", os.Stdout)
+	game, err := rage.NewGame(*data, os.Stdout)
 	if err != nil {
 		fmt.Printf("%v", err)
 	}

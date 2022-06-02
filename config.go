@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-func ReadConfig(reader io.Reader) (GameData, error) {
+func ReadConfig(reader io.Reader) (*GameData, error) {
 	configData, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
@@ -15,5 +15,5 @@ func ReadConfig(reader io.Reader) (GameData, error) {
 	if err != nil {
 		return nil, err
 	}
-	return gameData, nil
+	return &gameData, nil
 }
