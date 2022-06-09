@@ -25,9 +25,7 @@ const (
 	DefaultExitFailureMessage = "You cannot do that."
 )
 
-var (
-	ErrorExitRequirementNotMet = errors.New("exit requirement not met")
-)
+var ErrorExitRequirementNotMet = errors.New("exit requirement not met")
 
 func (e *Entity) Contains(name string) bool {
 	return slices.Contains(e.Contents, name)
@@ -130,10 +128,10 @@ func (g *Game) Do(cmd Command) error {
 		g.Say(g.ListInventory())
 	case "take":
 		g.Say(g.TakeItem(cmd.Noun))
-	//case "north":
-	//case "south":
-	//case "east":
-	//case "west":
+	// case "north":
+	// case "south":
+	// case "east":
+	// case "west":
 	default:
 		exit, ok := currentRoom.Exits[cmd.Action]
 		if !ok {
@@ -207,38 +205,28 @@ func (g *Game) MoveEntity(entityToMove string, destination string) {
 	entity.Location = d.Name
 }
 
-type GameData struct {
-	Data        map[string]*Entity
-	StartPlayer string
-}
+type GameData map[string]*Entity
 
 func (gd GameData) Missing(entityName string) bool {
-	_, ok := gd.Data[entityName]
+	_, ok := gd[entityName]
 	return !ok
 }
 
 func NewGame(data GameData, output io.Writer) (*Game, error) {
-	for _, val := range data.Data {
-		if val.Kind == "Room" {
-			if val.Location != "" {
-				return nil, fmt.Errorf("Rooms cannot have locations: %#v has a location", val)
-			}
-			continue
+	g := Game{
+		Entities: GameData{},
+		Output:   output,
+		Player:   data["player"],
+	}
+	for key, val := range data {
+		if val.Kind == "Room" && val.Location != "" {
+			return nil, fmt.Errorf("rooms cannot have locations: %#v has a location", val)
 		}
-		if data.Missing(val.Location) {
+		if val.Kind != "Room" && data.Missing(val.Location) {
 			return nil, fmt.Errorf("%#v has invalid location", val)
 		}
+		g.Entities[key] = val
 	}
 
-	startPlayer := data.StartPlayer
-
-	if data.Missing(startPlayer) {
-		return nil, fmt.Errorf("StartPlayer %s is not defined in data", startPlayer)
-	}
-
-	return &Game{
-		Entities: data.Data,
-		Output:   output,
-		Player:   data.Data[startPlayer],
-	}, nil
+	return &g, nil
 }
