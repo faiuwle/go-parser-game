@@ -1,6 +1,7 @@
 package rage_test
 
 import (
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -10,7 +11,22 @@ import (
 )
 
 func TestReadValidEntitiesFromConfig(t *testing.T) {
-	configFile, err := os.Open("testdata/testrooms.json")
+	t.Parallel()
+
+	path := t.TempDir() + "/rage_data.json"
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+
+	err = json.NewEncoder(file).Encode(commonGameData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	file.Close()
+
+	configFile, err := os.Open(path)
 	if err != nil {
 		t.Fatal(err)
 	}

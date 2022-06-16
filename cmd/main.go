@@ -19,7 +19,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	game, err := rage.NewGame(*data, os.Stdout)
+	game, err := rage.NewGame(data, os.Stdout)
 	if err != nil {
 		fmt.Printf("%v", err)
 	}

@@ -205,7 +205,7 @@ func (g *Game) MoveEntity(entityToMove string, destination string) {
 	entity.Location = d.Name
 }
 
-type GameData map[string]*Entity
+type GameData map[string]Entity
 
 func (gd GameData) Missing(entityName string) bool {
 	_, ok := gd[entityName]
@@ -214,18 +214,24 @@ func (gd GameData) Missing(entityName string) bool {
 
 func NewGame(data GameData, output io.Writer) (*Game, error) {
 	g := Game{
-		Entities: GameData{},
+		Entities: map[string]*Entity{},
 		Output:   output,
-		Player:   data["player"],
 	}
+	entities := g.Entities
 	for key, val := range data {
-		if val.Kind == "Room" && val.Location != "" {
+		entity := val
+
+		if entity.Kind == "Room" && entity.Location != "" {
 			return nil, fmt.Errorf("rooms cannot have locations: %#v has a location", val)
 		}
-		if val.Kind != "Room" && data.Missing(val.Location) {
+		if entity.Kind != "Room" && data.Missing(entity.Location) {
 			return nil, fmt.Errorf("%#v has invalid location", val)
 		}
-		g.Entities[key] = val
+		entities[key] = &entity
+	}
+	g.Player = g.Entities["player"]
+	if g.Player == nil {
+		return nil, errors.New("player missing from game data")
 	}
 
 	return &g, nil

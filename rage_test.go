@@ -100,30 +100,8 @@ func TestTakeItemSucceedsIfItemIsPresent(t *testing.T) {
 }
 
 func TestTakeItemFailsIfItemIsNotPresent(t *testing.T) {
-	entities := rage.GameData{
-		"Room": {
-			Name:     "Room",
-			Kind:     "Room",
-			Contents: []string{"key", "player"},
-		},
-		"Hidden Room": {
-			Name:     "No room for you",
-			Kind:     "Room",
-			Contents: []string{"phone"},
-		},
-		"key": {
-			Name:     "key",
-			Location: "Room",
-		},
-		"phone": {
-			Name:     "phone",
-			Location: "Hidden Room",
-		},
-		"player": {
-			Name:     "player",
-			Location: "Room",
-		},
-	}
+	t.Parallel()
+	entities := commonGameData
 	g, err := rage.NewGame(entities, io.Discard)
 	if err != nil {
 		t.Fatal(err)
@@ -142,71 +120,26 @@ func TestTakeItemFailsIfItemIsNotPresent(t *testing.T) {
 
 func TestPlayerLocationReturnsNameOfRoomWherePlayerIs(t *testing.T) {
 	t.Parallel()
-	bedroom := &rage.Entity{
-		Name:        "Bedroom",
-		Description: "The bedroom",
-		Kind:        "Room",
-		Contents:    []string{"player"},
-	}
-	data := map[string]*rage.Entity{
-		"Living Room": {
-			Name:        "Living Room",
-			Description: "The living room",
-			Kind:        "Room",
-			Exits: map[string]rage.Exit{
-				"north": {
-					Destination: "Bedroom",
-				},
-			},
-		},
-		"Bedroom": bedroom,
-		"player": {
-			Name:     "player",
-			Location: "Bedroom",
-		},
-	}
+	data := commonGameData
 	game, err := rage.NewGame(data, io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := bedroom
 	got := game.PlayerLocation()
-	if want != got {
-		t.Error(cmp.Diff(want, got))
+	if got.Name != "Living Room" {
+		t.Errorf("expected player to be in \"Living Room\" but got %q", got.Name)
 	}
 }
 
 func TestPlayerCanUseExitToMoveBetweenRooms(t *testing.T) {
 	t.Parallel()
-	data := map[string]*rage.Entity{
-		"Living Room": {
-			Name:        "Living Room",
-			Description: "The living room",
-			Kind:        "Room",
-			Exits: map[string]rage.Exit{
-				"north": {
-					Destination: "Bedroom",
-				},
-			},
-			Contents: []string{"player"},
-		},
-		"Bedroom": {
-			Name:        "Bedroom",
-			Description: "The bedroom",
-			Kind:        "Room",
-		},
-		"player": {
-			Name:     "player",
-			Kind:     "Character",
-			Location: "Living Room",
-		},
-	}
+	data := commonGameData
 	game, err := rage.NewGame(data, io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cmd := rage.Command{Action: "north"}
+	cmd := rage.Command{Action: "south"}
 	start := game.PlayerLocation()
 	err = game.Do(cmd)
 	finish := game.PlayerLocation()
@@ -221,36 +154,7 @@ func TestPlayerCanUseExitToMoveBetweenRooms(t *testing.T) {
 
 func TestPlayerCannotPassExitWithoutKey(t *testing.T) {
 	t.Parallel()
-	data := map[string]*rage.Entity{
-		"Living Room": {
-			Name:        "Living Room",
-			Description: "The living room",
-			Kind:        "Room",
-			Exits: map[string]rage.Exit{
-				"north": {
-					Destination:    "Bedroom",
-					Requires:       "key",
-					FailureMessage: "The door appears to be locked.",
-				},
-			},
-			Contents: []string{"key", "player"},
-		},
-		"Bedroom": {
-			Name:        "Bedroom",
-			Description: "The bedroom",
-			Kind:        "Room",
-		},
-		"key": {
-			Name:     "key",
-			Location: "Living Room",
-			Kind:     "Thing",
-		},
-		"player": {
-			Name:     "player",
-			Location: "Living Room",
-			Kind:     "Character",
-		},
-	}
+	data := commonGameData
 
 	writer := bytes.Buffer{}
 	game, err := rage.NewGame(data, &writer)
@@ -276,42 +180,14 @@ func TestPlayerCannotPassExitWithoutKey(t *testing.T) {
 
 func TestPlayerCannotPassExitWithoutKeyAndSeesDefaultFailureMessage(t *testing.T) {
 	t.Parallel()
-	data := map[string]*rage.Entity{
-		"Living Room": {
-			Name:        "Living Room",
-			Description: "The living room",
-			Kind:        "Room",
-			Exits: map[string]rage.Exit{
-				"north": {
-					Destination: "Bedroom",
-					Requires:    "key",
-				},
-			},
-			Contents: []string{"key", "player"},
-		},
-		"Bedroom": {
-			Name:        "Bedroom",
-			Description: "The bedroom",
-			Kind:        "Room",
-		},
-		"key": {
-			Name:     "key",
-			Location: "Living Room",
-			Kind:     "Thing",
-		},
-		"player": {
-			Name:     "player",
-			Location: "Living Room",
-			Kind:     "Character",
-		},
-	}
+	data := commonGameData
 	writer := bytes.Buffer{}
 	game, err := rage.NewGame(data, &writer)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cmd := rage.Command{Action: "north"}
+	cmd := rage.Command{Action: "east"}
 	start := game.PlayerLocation()
 	_ = game.Do(cmd)
 	finish := game.PlayerLocation()
@@ -328,8 +204,7 @@ func TestPlayerCannotPassExitWithoutKeyAndSeesDefaultFailureMessage(t *testing.T
 }
 
 func TestGetEntityPanicsWhenGivenNonExistentEntity(t *testing.T) {
-	data := map[string]*rage.Entity{}
-	game, err := rage.NewGame(data, io.Discard)
+	game, err := rage.NewGame(commonGameData, io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -360,7 +235,7 @@ func TestGetEntityReturnsEntityWhenItExists(t *testing.T) {
 func TestNewGameReturnsErrorWithInconsistentData(t *testing.T) {
 	testCases := map[string]rage.GameData{
 		"non-existent location": {
-			"object": &rage.Entity{
+			"object": rage.Entity{
 				Name:     "object",
 				Location: "non-existent",
 				Kind:     "Thing",
@@ -370,7 +245,7 @@ func TestNewGameReturnsErrorWithInconsistentData(t *testing.T) {
 			},
 		},
 		"non-existant object in room": {
-			"room": &rage.Entity{
+			"room": rage.Entity{
 				Name: "room",
 				Contents: []string{
 					"non-existent",
@@ -382,7 +257,7 @@ func TestNewGameReturnsErrorWithInconsistentData(t *testing.T) {
 			},
 		},
 		"empty location on thing": {
-			"object": &rage.Entity{
+			"object": rage.Entity{
 				Name:     "object",
 				Location: "",
 				Kind:     "Thing",
@@ -392,12 +267,12 @@ func TestNewGameReturnsErrorWithInconsistentData(t *testing.T) {
 			},
 		},
 		"non-empty location on room": {
-			"room": &rage.Entity{
+			"room": rage.Entity{
 				Name:     "room",
 				Location: "somewhere",
 				Kind:     "Room",
 			},
-			"somewhere": &rage.Entity{
+			"somewhere": rage.Entity{
 				Name:     "somewhere",
 				Location: "room",
 				Kind:     "Room",
@@ -420,66 +295,11 @@ func TestNewGameReturnsErrorWithInconsistentData(t *testing.T) {
 }
 
 func TestNewGameCreatesGameFromConsistentData(t *testing.T) {
-	data := map[string]*rage.Entity{
-		"Living Room": {
-			Name:        "Living Room",
-			Description: "The living room",
-			Kind:        "Room",
-			Exits: map[string]rage.Exit{
-				"north": {
-					Destination:    "Bedroom",
-					Requires:       "key",
-					FailureMessage: "You rattle the handle, but the door seems locked.",
-				},
-			},
-			Contents: []string{"key", "Shera"},
-		},
-		"Bedroom": {
-			Name:        "Bedroom",
-			Description: "The bedroom",
-			Exits: map[string]rage.Exit{
-				"south": {
-					Destination: "Living Room",
-				},
-			},
-			Kind: "Room",
-		},
-		"key": {
-			Name:     "key",
-			Location: "Living Room",
-			Kind:     "Thing",
-		},
-		"player": {
-			Name:     "Shera",
-			Location: "Living Room",
-		},
-	}
+	data := commonGameData
 
 	_, err := rage.NewGame(data, io.Discard)
 	if err != nil {
 		t.Fatalf("Errored on consistent game data: %s", err)
-	}
-}
-
-func TestNewGame_CreatesCopyOfGameData(t *testing.T) {
-	t.Parallel()
-	data := map[string]*rage.Entity{
-		"room": {
-			Name: "dummy",
-			Kind: "Room",
-		},
-	}
-	g, err := rage.NewGame(data, io.Discard)
-	if err != nil {
-		t.Fatal(err)
-	}
-	data["room"] = &rage.Entity{
-		Name: "bogus",
-		Kind: "Room",
-	}
-	p := g.GetEntity("room")
-	if p.Name == "bogus" {
-		t.Error("NewGame failed to copy the map!")
 	}
 }
 
@@ -494,12 +314,24 @@ var commonGameData = rage.GameData{
 				Requires:       "key",
 				FailureMessage: "The door appears to be locked.",
 			},
+			"south": {
+				Destination: "Bathroom",
+			},
+			"east": {
+				Destination: "Bedroom",
+				Requires:    "key",
+			},
 		},
 		Contents: []string{"key", "player"},
 	},
 	"Bedroom": {
 		Name:        "Bedroom",
 		Description: "The bedroom",
+		Kind:        "Room",
+	},
+	"Bathroom": {
+		Name:        "Bathroom",
+		Description: "The bathroom",
 		Kind:        "Room",
 	},
 	"key": {
