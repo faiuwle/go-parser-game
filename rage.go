@@ -32,7 +32,17 @@ func (e *Entity) Contains(name string) bool {
 }
 
 func (e *Entity) ListContents() string {
-	return "You see here " + FormatItems(e.Contents) + "."
+	items := make([]string, 0, len(e.Contents))
+	for _, item := range e.Contents {
+		if item == "player" {
+			continue
+		}
+		items = append(items, item)
+	}
+	if len(items) == 0 {
+		return ""
+	}
+	return "You see here " + FormatItems(items) + "."
 }
 
 func ListExits(room Entity) string {
@@ -66,7 +76,10 @@ func Start(game *Game) {
 	startRoom := game.PlayerLocation()
 	fmt.Println(startRoom.Description)
 	fmt.Println(ListExits(*startRoom))
-	fmt.Println(startRoom.ListContents())
+	contents := startRoom.ListContents()
+	if contents != "" {
+		fmt.Println(contents)
+	}
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("> ")
 
@@ -148,7 +161,10 @@ func (g *Game) Do(cmd Command) error {
 		currentRoom = g.PlayerLocation()
 		g.Say(currentRoom.Description)
 		g.Say(ListExits(*currentRoom))
-		g.Say(currentRoom.ListContents())
+		contents := currentRoom.ListContents()
+		if contents != "" {
+			g.Say(contents)
+		}
 	}
 
 	return nil

@@ -79,6 +79,34 @@ func TestListContents(t *testing.T) {
 	}
 }
 
+func TestListContentsOmitPlayer(t *testing.T) {
+	t.Parallel()
+	g, err := rage.NewGame(commonGameData, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	livingRoom := g.GetEntity("Living Room")
+	got := livingRoom.ListContents()
+	want := "You see here key."
+	if got != want {
+		t.Errorf("Wanted %q, got %q", want, got)
+	}
+}
+
+func TestListEmptyContents(t *testing.T) {
+	t.Parallel()
+	g, err := rage.NewGame(commonGameData, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bathroom := g.GetEntity("Bathroom")
+	got := bathroom.ListContents()
+	want := ""
+	if got != want {
+		t.Errorf("Wanted %q, got %q", want, got)
+	}
+}
+
 func TestTakeItemSucceedsIfItemIsPresent(t *testing.T) {
 	entities := commonGameData
 	g, err := rage.NewGame(entities, io.Discard)
