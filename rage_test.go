@@ -12,6 +12,7 @@ import (
 )
 
 func TestFormatItems(t *testing.T) {
+	t.Parallel()
 	testcases := []struct {
 		name  string
 		items []string
@@ -51,6 +52,7 @@ func TestFormatItems(t *testing.T) {
 }
 
 func TestListExits(t *testing.T) {
+	t.Parallel()
 	room := rage.Entity{
 		Exits: map[string]rage.Exit{
 			"north": {},
@@ -67,6 +69,7 @@ func TestListExits(t *testing.T) {
 }
 
 func TestListContents(t *testing.T) {
+	t.Parallel()
 	room := rage.Entity{
 		Contents: []string{"key", "phone", "chocolate"},
 	}
@@ -81,7 +84,7 @@ func TestListContents(t *testing.T) {
 
 func TestListContentsOmitPlayer(t *testing.T) {
 	t.Parallel()
-	g, err := rage.NewGame(commonGameData, io.Discard)
+	g, err := rage.NewGame(getCommonGameData(), io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +98,7 @@ func TestListContentsOmitPlayer(t *testing.T) {
 
 func TestListEmptyContents(t *testing.T) {
 	t.Parallel()
-	g, err := rage.NewGame(commonGameData, io.Discard)
+	g, err := rage.NewGame(getCommonGameData(), io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,8 +111,8 @@ func TestListEmptyContents(t *testing.T) {
 }
 
 func TestTakeItemSucceedsIfItemIsPresent(t *testing.T) {
-	entities := commonGameData
-	g, err := rage.NewGame(entities, io.Discard)
+	t.Parallel()
+	g, err := rage.NewGame(getCommonGameData(), io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,8 +132,7 @@ func TestTakeItemSucceedsIfItemIsPresent(t *testing.T) {
 
 func TestTakeItemFailsIfItemIsNotPresent(t *testing.T) {
 	t.Parallel()
-	entities := commonGameData
-	g, err := rage.NewGame(entities, io.Discard)
+	g, err := rage.NewGame(getCommonGameData(), io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,8 +150,7 @@ func TestTakeItemFailsIfItemIsNotPresent(t *testing.T) {
 
 func TestPlayerLocationReturnsNameOfRoomWherePlayerIs(t *testing.T) {
 	t.Parallel()
-	data := commonGameData
-	game, err := rage.NewGame(data, io.Discard)
+	game, err := rage.NewGame(getCommonGameData(), io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,8 +162,7 @@ func TestPlayerLocationReturnsNameOfRoomWherePlayerIs(t *testing.T) {
 
 func TestPlayerCanUseExitToMoveBetweenRooms(t *testing.T) {
 	t.Parallel()
-	data := commonGameData
-	game, err := rage.NewGame(data, io.Discard)
+	game, err := rage.NewGame(getCommonGameData(), io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,10 +182,9 @@ func TestPlayerCanUseExitToMoveBetweenRooms(t *testing.T) {
 
 func TestPlayerCannotPassExitWithoutKey(t *testing.T) {
 	t.Parallel()
-	data := commonGameData
 
 	writer := bytes.Buffer{}
-	game, err := rage.NewGame(data, &writer)
+	game, err := rage.NewGame(getCommonGameData(), &writer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,9 +207,8 @@ func TestPlayerCannotPassExitWithoutKey(t *testing.T) {
 
 func TestPlayerCannotPassExitWithoutKeyAndSeesDefaultFailureMessage(t *testing.T) {
 	t.Parallel()
-	data := commonGameData
 	writer := bytes.Buffer{}
-	game, err := rage.NewGame(data, &writer)
+	game, err := rage.NewGame(getCommonGameData(), &writer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -232,7 +230,8 @@ func TestPlayerCannotPassExitWithoutKeyAndSeesDefaultFailureMessage(t *testing.T
 }
 
 func TestGetEntityPanicsWhenGivenNonExistentEntity(t *testing.T) {
-	game, err := rage.NewGame(commonGameData, io.Discard)
+	t.Parallel()
+	game, err := rage.NewGame(getCommonGameData(), io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,12 +244,13 @@ func TestGetEntityPanicsWhenGivenNonExistentEntity(t *testing.T) {
 }
 
 func TestGetEntityReturnsEntityWhenItExists(t *testing.T) {
+	t.Parallel()
 	want := &rage.Entity{
 		Name:     "player",
 		Location: "Living Room",
 		Kind:     "Character",
 	}
-	game, err := rage.NewGame(commonGameData, io.Discard)
+	game, err := rage.NewGame(getCommonGameData(), io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -261,6 +261,7 @@ func TestGetEntityReturnsEntityWhenItExists(t *testing.T) {
 }
 
 func TestNewGameReturnsErrorWithInconsistentData(t *testing.T) {
+	t.Parallel()
 	testCases := map[string]rage.GameData{
 		"non-existent location": {
 			"object": rage.Entity{
@@ -323,53 +324,54 @@ func TestNewGameReturnsErrorWithInconsistentData(t *testing.T) {
 }
 
 func TestNewGameCreatesGameFromConsistentData(t *testing.T) {
-	data := commonGameData
-
-	_, err := rage.NewGame(data, io.Discard)
+	t.Parallel()
+	_, err := rage.NewGame(getCommonGameData(), io.Discard)
 	if err != nil {
 		t.Fatalf("Errored on consistent game data: %s", err)
 	}
 }
 
-var commonGameData = rage.GameData{
-	"Living Room": {
-		Name:        "Living Room",
-		Description: "The living room",
-		Kind:        "Room",
-		Exits: map[string]rage.Exit{
-			"north": {
-				Destination:    "Bedroom",
-				Requires:       "key",
-				FailureMessage: "The door appears to be locked.",
+func getCommonGameData() rage.GameData {
+	return rage.GameData{
+		"Living Room": {
+			Name:        "Living Room",
+			Description: "The living room",
+			Kind:        "Room",
+			Exits: map[string]rage.Exit{
+				"north": {
+					Destination:    "Bedroom",
+					Requires:       "key",
+					FailureMessage: "The door appears to be locked.",
+				},
+				"south": {
+					Destination: "Bathroom",
+				},
+				"east": {
+					Destination: "Bedroom",
+					Requires:    "key",
+				},
 			},
-			"south": {
-				Destination: "Bathroom",
-			},
-			"east": {
-				Destination: "Bedroom",
-				Requires:    "key",
-			},
+			Contents: []string{"key", "player"},
 		},
-		Contents: []string{"key", "player"},
-	},
-	"Bedroom": {
-		Name:        "Bedroom",
-		Description: "The bedroom",
-		Kind:        "Room",
-	},
-	"Bathroom": {
-		Name:        "Bathroom",
-		Description: "The bathroom",
-		Kind:        "Room",
-	},
-	"key": {
-		Name:     "key",
-		Location: "Living Room",
-		Kind:     "Thing",
-	},
-	"player": {
-		Name:     "player",
-		Location: "Living Room",
-		Kind:     "Character",
-	},
+		"Bedroom": {
+			Name:        "Bedroom",
+			Description: "The bedroom",
+			Kind:        "Room",
+		},
+		"Bathroom": {
+			Name:        "Bathroom",
+			Description: "The bathroom",
+			Kind:        "Room",
+		},
+		"key": {
+			Name:     "key",
+			Location: "Living Room",
+			Kind:     "Thing",
+		},
+		"player": {
+			Name:     "player",
+			Location: "Living Room",
+			Kind:     "Character",
+		},
+	}
 }

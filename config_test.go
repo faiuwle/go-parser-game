@@ -20,7 +20,7 @@ func TestReadValidEntitiesFromConfig(t *testing.T) {
 	}
 	defer file.Close()
 
-	err = json.NewEncoder(file).Encode(commonGameData)
+	err = json.NewEncoder(file).Encode(getCommonGameData())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func TestReadValidEntitiesFromConfig(t *testing.T) {
 	}
 	defer configFile.Close()
 
-	want := commonGameData
+	want := getCommonGameData()
 	var got rage.GameData
 
 	got, err = rage.ReadConfig(configFile)
