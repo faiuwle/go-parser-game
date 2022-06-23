@@ -50,3 +50,18 @@ func TestReadConfigErrorsOnInvalidJson(t *testing.T) {
 		t.Fatal("got no error, config is valid json")
 	}
 }
+
+func TestCompileProducesBinaryGivenJsonDataReturnsNoError(t *testing.T) {
+	tmpPath := t.TempDir() + "/adventure"
+
+	// TODO create compile method that returns executable, test that file functions properly
+	err := compile("testdata/adventure.json", tmpPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = os.Stat(tmpPath)
+	if err != nil {
+		t.Fatal("File does not exist")
+	}
+}
