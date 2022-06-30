@@ -2,6 +2,8 @@ package rage
 
 import (
 	"bufio"
+	_ "embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -251,4 +253,83 @@ func NewGame(data GameData, output io.Writer) (*Game, error) {
 	}
 
 	return &g, nil
+}
+
+func ReadConfig(reader io.Reader) (GameData, error) {
+	configData, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	var gameData GameData
+	err = json.Unmarshal(configData, &gameData)
+	if err != nil {
+		return nil, err
+	}
+	return gameData, nil
+}
+
+var ErrorInvalidCommand = errors.New("invalid command")
+
+type Command struct {
+	Action string
+	Noun   string
+}
+
+func Parse(command string) (Command, error) {
+	commandParts := strings.Split(command, " ")
+
+	if len(commandParts) == 1 {
+		return Command{
+			Action: commandParts[0],
+		}, nil
+	} else if len(commandParts) == 2 {
+		return Command{
+			Action: commandParts[0],
+			Noun:   commandParts[1],
+		}, nil
+	} else {
+		return Command{}, ErrorInvalidCommand
+	}
+}
+
+func Compile(dataPath, binPath string) error {
+	_, err := SetupBuildDir(dataPath)
+	if err != nil {
+		return err
+	}
+	// ExecGoBuild(buildDir, binPath)
+	return nil
+}
+
+//go:embed "game/main.go"
+var mainGo []byte
+
+func SetupBuildDir(dataPath string) (buildPath string, err error) {
+	buildPath, err = os.MkdirTemp(os.TempDir(), "")
+	if err != nil {
+		return "", err
+	}
+	src, err := os.Open(dataPath)
+	if err != nil {
+		return "", err
+	}
+	defer src.Close()
+	dst, err := os.Create(buildPath + "/adventure.json")
+	if err != nil {
+		return "", err
+	}
+	defer dst.Close()
+	_, err = io.Copy(dst, src)
+	if err != nil {
+		return "", err
+	}
+	os.WriteFile(buildPath+"/main.go", mainGo, 0o600)
+	if err != nil {
+		return "", err
+	}
+	return buildPath, nil
+}
+
+func ExecGoBuild(buildDir, binPath string) error {
+	return nil
 }

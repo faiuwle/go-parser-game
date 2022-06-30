@@ -2,7 +2,10 @@ package rage_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
+	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -331,6 +334,47 @@ func TestNewGameCreatesGameFromConsistentData(t *testing.T) {
 	}
 }
 
+func TestReadValidEntitiesFromConfig(t *testing.T) {
+	t.Parallel()
+
+	path := t.TempDir() + "/rage_data.json"
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+
+	err = json.NewEncoder(file).Encode(getCommonGameData())
+	if err != nil {
+		t.Fatal(err)
+	}
+	file.Close()
+
+	configFile, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer configFile.Close()
+
+	want := getCommonGameData()
+	var got rage.GameData
+
+	got, err = rage.ReadConfig(configFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cmp.Equal(want, got) {
+		t.Fatal(cmp.Diff(want, got))
+	}
+}
+
+func TestReadConfigErrorsOnInvalidJson(t *testing.T) {
+	_, err := rage.ReadConfig(strings.NewReader("}"))
+	if err == nil {
+		t.Fatal("got no error, config is valid json")
+	}
+}
+
 func getCommonGameData() rage.GameData {
 	return rage.GameData{
 		"Living Room": {
@@ -373,5 +417,85 @@ func getCommonGameData() rage.GameData {
 			Location: "Living Room",
 			Kind:     "Character",
 		},
+	}
+}
+
+func TestInvalidCommandFails(t *testing.T) {
+	command := "take key and run"
+
+	_, err := rage.Parse(command)
+
+	if err != rage.ErrorInvalidCommand {
+		t.Error(err)
+	}
+}
+
+func TestTakeKeySucceeds(t *testing.T) {
+	command := "take key"
+
+	cmd, err := rage.Parse(command)
+
+	if cmd.Action != "take" || cmd.Noun != "key" {
+		t.Errorf("Command did not parse successfully")
+	}
+
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestSetupBuildDir_CreatesTmpDirWithJSONAndGoAndReturnsPath(t *testing.T) {
+	t.Parallel()
+	buildPath, err := rage.SetupBuildDir("testdata/adventure.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = os.Stat(buildPath + "/adventure.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = os.Stat(buildPath + "/main.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCompileProducesBinaryGivenJsonDataReturnsNoError(t *testing.T) {
+	binPath := t.TempDir() + "/adventure"
+
+	// TODO create compile method that returns executable, test that file functions properly
+	err := rage.Compile("testdata/adventure.json", binPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command(binPath)
+	want := "The living room"
+	output, err := cmd.Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(output)
+	if !strings.Contains(got, want) {
+		t.Errorf("want output to contain %q, but got:\n%s", want, got)
+	}
+}
+
+func TestExecGoBuild_ProducesBinaryThatWeCanRunAndSeeCorrectOutput(t *testing.T) {
+	t.Parallel()
+	buildDir := "testdata/build"
+	binPath := t.TempDir() + "/adventure"
+	err := rage.ExecGoBuild(buildDir, binPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command(binPath)
+	want := "The living room"
+	output, err := cmd.Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(output)
+	if !strings.Contains(got, want) {
+		t.Errorf("want output to contain %q, but got:\n%s", want, got)
 	}
 }
