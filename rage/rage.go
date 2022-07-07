@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"strings"
 
 	"golang.org/x/exp/maps"
@@ -293,11 +294,16 @@ func Parse(command string) (Command, error) {
 }
 
 func Compile(dataPath, binPath string) error {
-	_, err := SetupBuildDir(dataPath)
+	buildDir, err := SetupBuildDir(dataPath)
 	if err != nil {
 		return err
 	}
-	// ExecGoBuild(buildDir, binPath)
+
+	err = ExecGoBuild(buildDir, binPath)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -314,7 +320,7 @@ func SetupBuildDir(dataPath string) (buildPath string, err error) {
 		return "", err
 	}
 	defer src.Close()
-	dst, err := os.Create(buildPath + "/adventure.json")
+	dst, err := os.Create(buildPath + "/game.json")
 	if err != nil {
 		return "", err
 	}
@@ -323,13 +329,29 @@ func SetupBuildDir(dataPath string) (buildPath string, err error) {
 	if err != nil {
 		return "", err
 	}
-	os.WriteFile(buildPath+"/main.go", mainGo, 0o600)
+
+	const perm = 0o600
+	os.WriteFile(buildPath+"/main.go", mainGo, perm)
 	if err != nil {
 		return "", err
 	}
+
+	goMod := "module rage-game-module\n\nrequire github.com/faiuwle/go-parser-game/rage latest\n"
+
+	os.WriteFile(buildPath+"/go.mod", []byte(goMod), perm)
+
 	return buildPath, nil
 }
 
 func ExecGoBuild(buildDir, binPath string) error {
+	cmd := exec.Command("go", "build", "-o", binPath)
+	cmd.Dir = buildDir
+
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return fmt.Errorf("error running go build: %v, output: %s", err, output)
+	}
+
 	return nil
 }

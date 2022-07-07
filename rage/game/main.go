@@ -3,10 +3,9 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"github.com/faiuwle/go-parser-game/rage"
 	"os"
 	"strings"
-
-	"github.com/faiuwle/go-parser-game/rage"
 )
 
 //go:embed "game.json"

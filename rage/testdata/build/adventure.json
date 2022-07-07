@@ -1,0 +1,38 @@
+{
+  "Living Room": {
+    "Name": "Living Room",
+    "Description": "The living room",
+    "Kind": "Room",
+    "Exits": {
+      "north": {
+        "Destination": "Bedroom",
+        "Requires": "key",
+        "FailureMessage": "You rattle the handle, but the door seems locked."
+      }
+    },
+    "Contents": [
+      "key",
+      "player"
+    ]
+  },
+  "Bedroom": {
+    "Name": "Bedroom",
+    "Description": "The bedroom",
+    "Exits": {
+      "south": {
+        "Destination": "Living Room"
+      }
+    },
+    "Kind": "Room"
+  },
+  "key": {
+    "Name": "key",
+    "Location": "Living Room",
+    "Kind": "Thing"
+  },
+  "player": {
+    "Name": "player",
+    "Location": "Living Room",
+    "Kind": "Character"
+  }
+}

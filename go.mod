@@ -1,4 +1,4 @@
-module github.com/faiuwle/go-parser-game/rage
+module github.com/faiuwle/go-parser-game
 
 go 1.18
 

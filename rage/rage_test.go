@@ -446,15 +446,20 @@ func TestTakeKeySucceeds(t *testing.T) {
 
 func TestSetupBuildDir_CreatesTmpDirWithJSONAndGoAndReturnsPath(t *testing.T) {
 	t.Parallel()
-	buildPath, err := rage.SetupBuildDir("testdata/adventure.json")
+	buildPath, err := rage.SetupBuildDir("testdata/build/adventure.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = os.Stat(buildPath + "/adventure.json")
+	_, err = os.Stat(buildPath + "/game.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 	_, err = os.Stat(buildPath + "/main.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = os.Stat(buildPath + "/go.mod")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -464,17 +469,20 @@ func TestCompileProducesBinaryGivenJsonDataReturnsNoError(t *testing.T) {
 	binPath := t.TempDir() + "/adventure"
 
 	// TODO create compile method that returns executable, test that file functions properly
-	err := rage.Compile("testdata/adventure.json", binPath)
+	err := rage.Compile("testdata/build/adventure.json", binPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cmd := exec.Command(binPath)
 	want := "The living room"
 	output, err := cmd.Output()
-	if err != nil {
-		t.Fatal(err)
-	}
+
 	got := string(output)
+
+	if err != nil {
+		t.Fatal(err, got)
+	}
+
 	if !strings.Contains(got, want) {
 		t.Errorf("want output to contain %q, but got:\n%s", want, got)
 	}
@@ -491,10 +499,13 @@ func TestExecGoBuild_ProducesBinaryThatWeCanRunAndSeeCorrectOutput(t *testing.T)
 	cmd := exec.Command(binPath)
 	want := "The living room"
 	output, err := cmd.Output()
-	if err != nil {
-		t.Fatal(err)
-	}
+
 	got := string(output)
+
+	if err != nil {
+		t.Fatal(err, got)
+	}
+
 	if !strings.Contains(got, want) {
 		t.Errorf("want output to contain %q, but got:\n%s", want, got)
 	}

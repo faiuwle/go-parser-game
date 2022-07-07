@@ -3,13 +3,12 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"github.com/faiuwle/go-parser-game/rage"
 	"os"
 	"strings"
-
-	"github.com/faiuwle/go-parser-game/rage"
 )
 
-//go:embed "game.json"
+//go:embed "adventure.json"
 var standardData string
 
 func main() {
