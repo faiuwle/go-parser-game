@@ -312,6 +312,7 @@ var mainGo []byte
 
 func SetupBuildDir(dataPath string) (buildPath string, err error) {
 	buildPath, err = os.MkdirTemp(os.TempDir(), "")
+	// TODO where is os.TempDir() -- ls $TMPDIR?
 	if err != nil {
 		return "", err
 	}
@@ -336,9 +337,16 @@ func SetupBuildDir(dataPath string) (buildPath string, err error) {
 		return "", err
 	}
 
-	goMod := "module rage-game-module\n\nrequire github.com/faiuwle/go-parser-game/rage latest\n"
+	goMod := "module rage-game-module"
 
 	os.WriteFile(buildPath+"/go.mod", []byte(goMod), perm)
+
+	cmd := exec.Command("go", "mod", "tidy")
+	cmd.Dir = buildPath
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("Command output: %q\n\nError msg: %q", output, err)
+	}
 
 	return buildPath, nil
 }

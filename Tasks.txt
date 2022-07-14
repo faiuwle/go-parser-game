@@ -5,3 +5,4 @@ X Ability to list objects
 - Update everything to use string as entity reference rather than index or id
 - Remove the need to specify the location of things twice
 - Implement Game.Do(string)
+- Cleanup build dir, where is binary?

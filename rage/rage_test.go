@@ -463,6 +463,13 @@ func TestSetupBuildDir_CreatesTmpDirWithJSONAndGoAndReturnsPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	content, err := os.ReadFile(buildPath + "/go.mod")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(content, []byte("require")) {
+		t.Fatalf("Require does not exist in go.mod, file content: %q", content)
+	}
 }
 
 func TestCompileProducesBinaryGivenJsonDataReturnsNoError(t *testing.T) {
