@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-
 	"github.com/faiuwle/go-parser-game/rage"
+	"github.com/google/go-cmp/cmp"
+	"github.com/rogpeppe/go-internal/testscript"
 )
 
 func TestFormatItems(t *testing.T) {
@@ -516,4 +516,14 @@ func TestExecGoBuild_ProducesBinaryThatWeCanRunAndSeeCorrectOutput(t *testing.T)
 	if !strings.Contains(got, want) {
 		t.Errorf("want output to contain %q, but got:\n%s", want, got)
 	}
+}
+
+func TestScript(t *testing.T) {
+	testscript.Run(t, testscript.Params{Dir: "testdata/script"})
+}
+
+func TestMain(m *testing.M) {
+	exitStatus := testscript.RunMain(m, map[string]func() int{"ragec": rage.Main})
+
+	os.Exit(exitStatus)
 }

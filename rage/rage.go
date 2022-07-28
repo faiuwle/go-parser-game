@@ -30,6 +30,16 @@ const (
 
 var ErrorExitRequirementNotMet = errors.New("exit requirement not met")
 
+func Main() int {
+	// Main needs to run with an argument in order not to panic, to fix next time
+	dataPath := os.Args[1]
+	err := Compile(dataPath, "./adventure")
+	if err != nil {
+		panic(err)
+	}
+	return 0
+}
+
 func (e *Entity) Contains(name string) bool {
 	return slices.Contains(e.Contents, name)
 }
